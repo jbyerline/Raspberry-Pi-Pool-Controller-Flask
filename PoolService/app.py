@@ -12,7 +12,7 @@ tempSetUp()
 @app.route("/")
 def index():
     now = datetime.datetime.now()
-    timeString = now.strftime("%a %m %d %Y")
+    timeString = now.strftime("%a %m-%d-%Y")
     templateData = {
         'time': timeString,
         'outdoorT': outdoorTemp(),
