@@ -47,7 +47,7 @@
 <header>
     <h1>Pool Service</h1>
 </header>
-<body>
+<body ontouchstart="" class="disable-dbl-tap-zoom">
 <h2><b>Controls</b></h2>
 <div class="row">
     <div class="column">
@@ -61,13 +61,6 @@
         <p>Waterfall: {{ waterfallStatus }}</p>
         <button class="button" id = "onWaterfall" onclick="changeImage(this.id)">On</button>
         <button class="button" id = "offWaterfall" onclick="changeImage(this.id)">Off</button>
-    </div>
-</div>
-<div class="row">
-    <div class="column">
-        <p>Pool Pump: {{ poolPumpStatus }}</p>
-        <button class="button" id = "onPump" onclick="changeImage(this.id)">On</button>
-        <button class="button" id = "offPump" onclick="changeImage(this.id)">Off</button>
     </div>
 </div>
 <h2><b>Statistics</b></h2>

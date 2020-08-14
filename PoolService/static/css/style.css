@@ -29,24 +29,24 @@ p {
 }
 
 a:link {
-  color: white;
-  background-color: transparent;
-  text-decoration: none;
+    color: white;
+    background-color: transparent;
+    text-decoration: none;
 }
 a:visited {
-  color: white;
-  background-color: transparent;
-  text-decoration: none;
+    color: white;
+    background-color: transparent;
+    text-decoration: none;
 }
 a:hover {
-  color: red;
-  background-color: transparent;
-  text-decoration: underline;
+    color: red;
+    background-color: transparent;
+    text-decoration: underline;
 }
 a:active {
-  color: white;
-  background-color: transparent;
-  text-decoration: underline;
+    color: white;
+    background-color: transparent;
+    text-decoration: underline;
 }
 
 .footer {
@@ -68,15 +68,30 @@ a:active {
 }
 
 .button {
-font-family: SF;
-background-color: #000000;
-border: none;
-color: white;
-padding: 15px 32px;
-text-align: center;
-text-decoration: none;
-font-size: 28px;
-border-radius: 8px;
-border: 2px solid #ffffff;
+    font-family: SF;
+    background-color: black;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 28px;
+    border-radius: 8px;
+    border: 2px solid white;
+    box-shadow: 0 9px #999;
+}
+
+.button:hover {
+    background-color: black
+}
+
+.button:active {
+    background-color: black;
+    box-shadow: 0 5px #666;
+    -webkit-transform: translateY(4px);
+    transform: translateY(4px);
+}
+
+.disable-dbl-tap-zoom {
+  touch-action: manipulation;
 }
 
