@@ -1,19 +1,20 @@
 import datetime
-from apscheduler.scheduler import Scheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, render_template
 from lib.tempuratureController import tempSetUp, outdoorTemp, poolTemp
 from lib.poolLightController import poolLights
 from lib.waterfallController import waterfall, waterfallSchedule
 from lib.poolPumpController import poolPump
 
+sched = BackgroundScheduler()  # Scheduler object
+
 app = Flask(__name__)
 
 tempSetUp()
 
-sched = Scheduler()  # Scheduler object
 sched.start()
 # add your job here
-sched.add_interval_job(waterfallSchedule, minutes=0.1)
+sched.add_job(waterfallSchedule, 'interval', seconds=5, misfire_grace_time=3600)
 
 
 @app.route("/")
@@ -47,6 +48,5 @@ def action(deviceName, action):
     return render_template('index.html', **templateData)
 
 if __name__ == '__main__':
-    app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.run(host='192.168.7.25', port=8000, debug=False)
 
