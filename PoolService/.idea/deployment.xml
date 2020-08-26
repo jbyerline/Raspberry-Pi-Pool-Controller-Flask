@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" serverName="pi@192.168.7.25:22">
+    <serverData>
+      <paths name="pi@192.168.7.10:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/pi/p" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="pi@192.168.7.25:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/pi/PoolService" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>

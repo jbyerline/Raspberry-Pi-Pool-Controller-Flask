@@ -18,6 +18,7 @@ def tempSetUp():
 
 def outdoorTemp():
     volt = analog_0.read()
+    formatted_float = 0.0
     if (str(volt) != "None"):
         thermistor_adc_val = volt * 1023
         output_voltage = ((thermistor_adc_val * arduinoPinVoltage) / 1023.0)
@@ -39,6 +40,7 @@ def outdoorTemp():
 
 def poolTemp():
     volt = analog_1.read()
+    formatted_float = 0.0
     if (str(volt) != "None"):
         thermistor_adc_val = volt * 1023
         output_voltage = ((thermistor_adc_val * arduinoPinVoltage) / 1023.0)

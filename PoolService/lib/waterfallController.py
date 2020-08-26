@@ -25,7 +25,6 @@ def waterfallSchedule():
         print("Waterfall on (SCHEDULED)")
         on()
     elif(gaction == 'off'):
-        print("Waterfall off (SCHEDULED)")
         off()
 
 def on():
