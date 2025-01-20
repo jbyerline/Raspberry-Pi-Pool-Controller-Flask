@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="10">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Pool Service</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon_120x120.png') }}">
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ url_for('static', filename='images/touch-icon-iPad-76x76.png') }}">
+    <link rel="apple-touch-icon" sizes="120x120" href="{{ url_for('static', filename='images/apple-touch-icon_120x120.png') }}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ url_for('static', filename='images/touch-icon-ipad-retina-152x152.png') }}">
+    <script>
+        function sendCommand(device, action) {
+            fetch(`/${device}/${action}`, { method: "GET" })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(`${device} is now ${action}`);
+                    updateStatus();
+                })
+                .catch(error => console.error(`Error controlling ${device}:`, error));
+        }
+
+        function updateStatus() {
+            fetch("/poolLight/status")
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("poolLightStatus").innerText = data.poolLightStatus === "on" ? "On" : "Off";
+                });
+
+            fetch("/waterfall/status")
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("waterfallStatus").innerText = data.waterfallStatus === "on" ? "On" : "Off";
+                });
+
+            fetch("/airTemp")
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("outdoorTemp").innerHTML = `${data.outdoorTemp}&#176; F`;
+                });
+
+            fetch("/poolTemp")
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("poolTemp").innerHTML = `${data.poolTemp}&#176; F`;
+                });
+        }
+
+        document.addEventListener("DOMContentLoaded", updateStatus);
+    </script>
+</head>
+<header>
+    <h1>Pool Service</h1>
+</header>
+<body ontouchstart="" class="disable-dbl-tap-zoom">
+    <h2><b>Controls</b></h2>
+    <div class="row">
+        <div class="column">
+            <p>Pool Lights: <span id="poolLightStatus">{{ poolLightStatus }}</span></p>
+            <button class="button" onclick="sendCommand('poolLight', 'on')">On</button>
+            <button class="button" onclick="sendCommand('poolLight', 'off')">Off</button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="column">
+            <p>Waterfall: <span id="waterfallStatus">{{ waterfallStatus }}</span></p>
+            <button class="button" onclick="sendCommand('waterfall', 'on')">On</button>
+            <button class="button" onclick="sendCommand('waterfall', 'off')">Off</button>
+        </div>
+    </div>
+    <h2><b>Metrics</b></h2>
+    <div class="row">
+        <div class="column">
+            <p class="temp">Air Temperature: <span id="outdoorTemp">{{ outdoorT }}&#176; F</span></p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="column">
+            <p class="temp">Pool Temperature: <span id="poolTemp">{{ poolT }}&#176; F</span></p>
+        </div>
+    </div>
+</body>
+<footer class="footer">
+    <p class="footer">Copyright <a href="https://byerline.me">Jacob Byerline</a> © {{ year }}</p>
+    <p class="footer">v{{ version }}</p>
+</footer>
+</html>
