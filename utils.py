@@ -1,5 +1,6 @@
 import os
 import logging
+from pymongo import MongoClient
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -31,3 +32,13 @@ def load_env_files():
 
 load_env_files()
 
+
+# MongoDB Configuration
+MONGO_URI = os.environ.get("MONGO_URI")
+DB_NAME = os.environ.get("MONGO_DB_NAME")
+COLLECTION_NAME = os.environ.get("MONGO_COLLECTION")
+
+# Initialize MongoDB Client
+mongo_client = MongoClient(MONGO_URI)
+db = mongo_client[DB_NAME]
+collection = db[COLLECTION_NAME]

@@ -1,0 +1,4 @@
+pyFirmata2~=2.5.1
+flask~=3.1.0
+pymongo~=4.10.1
+schedule~=1.2.2
