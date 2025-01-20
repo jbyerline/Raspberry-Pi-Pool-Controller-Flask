@@ -9,6 +9,7 @@ import atexit
 import time
 from threading import Thread
 from flask import Flask, render_template, jsonify
+from pyngrok import ngrok
 import utils
 from lib.hardwareController import HardwareController
 from lib.temperatureController import TemperatureController
@@ -105,6 +106,13 @@ if __name__ == '__main__':
     scheduler_thread = Thread(target=run_scheduler)
     scheduler_thread.start()
 
-    # Shut down the scheduler when exiting the app
-    atexit.register(lambda: logger.info("Shutting down scheduler"))
-    app.run(host=os.getenv("HOST", "0.0.0.0"), port=int(os.getenv("PORT", "8000")))
+    # Start ngrok in a separate thread
+    port = (os.getenv("PORT", "8000"))
+    ngrok.set_auth_token(os.getenv("NGROK_AUTHTOKEN"))
+    public_url = ngrok.connect(port, domain=os.getenv("NGROK_DOMAIN")).public_url
+    logger.info(f"ngrok tunnel opened: {public_url}")
+
+    # Shut down ngrok when exiting the app
+    atexit.register(lambda: ngrok.disconnect(public_url))
+
+    app.run(host=os.getenv("HOST", "0.0.0.0"), port=int(port))
