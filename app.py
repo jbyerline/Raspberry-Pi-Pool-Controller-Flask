@@ -99,8 +99,8 @@ def run_scheduler():
 if __name__ == '__main__':
     logger.info(f"Starting up {os.environ.get('SERVICE_NAME')} v{os.environ.get('APP_VERSION')}")
 
-    # Schedule the job to run every 5 minutes
-    schedule.every(int(os.environ.get("LOG_TEMPS_EVERY_N_HOURS"))).minutes.do(log_temps)
+    # Schedule the job to run every n hours
+    schedule.every(int(os.environ.get("LOG_TEMPS_EVERY_N_HOURS"))).hours.do(log_temps)
 
     # Start the scheduler in a separate thread to allow the app to continue running
     scheduler_thread = Thread(target=run_scheduler)

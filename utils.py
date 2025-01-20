@@ -16,16 +16,19 @@ logger.addHandler(handler)
 # Load environment variables
 def load_env_files():
     """Load environment variables from .env and .env.local if they exist."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))  # Get script's directory
+
     def load_env_file(filename):
-        if os.path.exists(filename):
-            with open(filename) as f:
+        env_path = os.path.join(base_dir, filename)
+        if os.path.exists(env_path):
+            with open(env_path) as f:
                 for line in f:
                     if line.strip() and not line.startswith('#'):
                         key, value = map(str.strip, line.split('=', 1))
                         os.environ[key] = value
-            logger.info(f"Loaded environment variables from {filename}")
+            print(f"Loaded environment variables from {env_path}")
         else:
-            logger.info(f"{filename} not found, skipping")
+            print(f"{env_path} not found, skipping")
 
     load_env_file('.env')
     load_env_file('.env.local')
