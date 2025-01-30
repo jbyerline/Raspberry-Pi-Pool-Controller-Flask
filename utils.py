@@ -45,3 +45,6 @@ COLLECTION_NAME = os.environ.get("MONGO_COLLECTION")
 mongo_client = MongoClient(MONGO_URI)
 db = mongo_client[DB_NAME]
 collection = db[COLLECTION_NAME]
+
+def str_to_bool(value: str) -> bool:
+    return value.lower() in ("1", "true", "yes", "on")

@@ -2,18 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="10">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <title>Pool Service</title>
     <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon_120x120.png') }}">
-    <link rel="apple-touch-icon" sizes="76x76" href="{{ url_for('static', filename='images/touch-icon-iPad-76x76.png') }}">
-    <link rel="apple-touch-icon" sizes="120x120" href="{{ url_for('static', filename='images/apple-touch-icon_120x120.png') }}">
-    <link rel="apple-touch-icon" sizes="152x152" href="{{ url_for('static', filename='images/touch-icon-ipad-retina-152x152.png') }}">
+    <link rel="apple-touch-icon" sizes="76x76"
+          href="{{ url_for('static', filename='images/touch-icon-iPad-76x76.png') }}">
+    <link rel="apple-touch-icon" sizes="120x120"
+          href="{{ url_for('static', filename='images/apple-touch-icon_120x120.png') }}">
+    <link rel="apple-touch-icon" sizes="152x152"
+          href="{{ url_for('static', filename='images/touch-icon-ipad-retina-152x152.png') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         function sendCommand(device, action) {
-            fetch(`/${device}/${action}`, { method: "GET" })
+            fetch(`/${device}/${action}`, {method: "GET"})
                 .then(response => response.json())
                 .then(data => {
                     console.log(`${device} is now ${action}`);
@@ -50,37 +53,143 @@
 
         document.addEventListener("DOMContentLoaded", updateStatus);
     </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let ctx = document.getElementById('tempChart').getContext('2d');
+            let tempChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Air Temperature (°F)',
+                            data: [],
+                            borderColor: 'red',
+                            fill: false
+                        },
+                        {
+                            label: 'Water Temperature (°F)',
+                            data: [],
+                            borderColor: 'blue',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {title: {display: true, text: 'Date'}},
+                        y: {title: {display: true, text: 'Temperature (°F)'}}
+                    }
+                }
+            });
+
+            function fetchData() {
+                let range = document.getElementById("range").value;
+                let granularity = document.getElementById("granularity").value;
+
+                fetch(`/temperature-data?range=${range}&granularity=${granularity}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+
+                        let labels = data.map(d => {
+                            let dateString = d.date.month + "/" + d.date.day + "/" + d.date.year;
+
+                            if (granularity === "hourly") {
+                                dateString += " " + d.date.hour + ":00";
+                            }
+
+                            let date = new Date(dateString);
+
+                            let formatted_date = isNaN(date.getTime()) ? "Invalid Date" : date.toLocaleString();
+
+                            if (granularity !== "hourly") {
+                                formatted_date = formatted_date.split(",")[0];
+                            }
+
+                            if (granularity === "hourly") {
+                                formatted_date = formatted_date.split(":")[0] + formatted_date.split(":")[2].slice(-2);
+                            }
+                            return formatted_date;
+                        });
+
+                        let airTemps = data.map(d => d.air_temp);
+                        let waterTemps = data.map(d => d.water_temp);
+
+                        tempChart.data.labels = labels;
+                        tempChart.data.datasets[0].data = airTemps;
+                        tempChart.data.datasets[1].data = waterTemps;
+                        tempChart.update();
+                    })
+                    .catch(error => console.error("Error fetching data:", error));
+            }
+
+            // Load data initially
+            fetchData();
+
+            // Attach event listener for update button
+            document.querySelector("button[onclick='fetchData()']").addEventListener("click", fetchData);
+        });
+    </script>
 </head>
 <header>
     <h1>Pool Service</h1>
 </header>
 <body ontouchstart="" class="disable-dbl-tap-zoom">
-    <h2><b>Controls</b></h2>
-    <div class="row">
-        <div class="column">
-            <p>Pool Lights: <span id="poolLightStatus">{{ poolLightStatus }}</span></p>
-            <button class="button" onclick="sendCommand('poolLight', 'on')">On</button>
-            <button class="button" onclick="sendCommand('poolLight', 'off')">Off</button>
-        </div>
+<h2><b>Controls</b></h2>
+<div class="row">
+    <div class="column">
+        <p>Pool Lights: <span id="poolLightStatus">{{ poolLightStatus }}</span></p>
+        <button class="button" onclick="sendCommand('poolLight', 'on')">On</button>
+        <button class="button" onclick="sendCommand('poolLight', 'off')">Off</button>
     </div>
-    <div class="row">
-        <div class="column">
-            <p>Waterfall: <span id="waterfallStatus">{{ waterfallStatus }}</span></p>
-            <button class="button" onclick="sendCommand('waterfall', 'on')">On</button>
-            <button class="button" onclick="sendCommand('waterfall', 'off')">Off</button>
-        </div>
+</div>
+<div class="row">
+    <div class="column">
+        <p>Waterfall: <span id="waterfallStatus">{{ waterfallStatus }}</span></p>
+        <button class="button" onclick="sendCommand('waterfall', 'on')">On</button>
+        <button class="button" onclick="sendCommand('waterfall', 'off')">Off</button>
     </div>
-    <h2><b>Metrics</b></h2>
-    <div class="row">
-        <div class="column">
-            <p class="temp">Air Temperature: <span id="outdoorTemp">{{ outdoorT }}&#176; F</span></p>
-        </div>
+</div>
+<h2><b>Metrics</b></h2>
+<div class="row">
+    <div class="column">
+        <p class="temp">Air Temperature: <span id="outdoorTemp">{{ outdoorT }}&#176; F</span></p>
     </div>
-    <div class="row">
-        <div class="column">
-            <p class="temp">Pool Temperature: <span id="poolTemp">{{ poolT }}&#176; F</span></p>
-        </div>
+</div>
+<div class="row">
+    <div class="column">
+        <p class="temp">Pool Temperature: <span id="poolTemp">{{ poolT }}&#176; F</span></p>
     </div>
+</div>
+<h2>Temperature Trends</h2>
+<div class="padding">
+    <label for="range">Time Range:</label>
+    <select id="range">
+        <option value="24h">Last 24 Hours</option>
+        <option value="7d" selected>Last 7 Days</option>
+        <option value="30d">Last 30 Days</option>
+        <option value="60d">Last 60 Days</option>
+        <option value="90d">Last 90 Days</option>
+        <option value="360d">Last 1 Year</option>
+    </select>
+</div>
+<div class="padding">
+    <label for="granularity">Granularity:</label>
+    <select id="granularity">
+        <option value="hourly">Hourly</option>
+        <option value="daily" selected>Daily</option>
+{#        <option value="weekly">Weekly</option>#}
+    </select>
+</div>
+<button class="button-small" onclick="fetchData()">Update Graph</button>
+
+<canvas id="tempChart"></canvas>
 </body>
 <footer class="footer">
     <p class="footer">Copyright <a href="https://byerline.me">Jacob Byerline</a> © {{ year }}</p>
