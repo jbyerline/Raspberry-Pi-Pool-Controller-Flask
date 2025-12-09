@@ -136,11 +136,93 @@ def get_temperature_data():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+def get_last_valid_temps():
+    """Fetch the most recent temps from Mongo, if any."""
+    last = collection.find_one(sort=[("date", -1)])
+    if not last:
+        return None, None
+    return last.get("air_temp"), last.get("water_temp")
+
+
+def is_valid_temp(new_value, last_value, *, min_temp=20, max_temp=120, max_delta=None):
+    """
+    Basic anomaly check:
+      - within absolute min/max range
+      - not jumping more than max_delta from last_value (if provided)
+    """
+    if new_value is None:
+        return False
+
+    if new_value < min_temp or new_value > max_temp:
+        return False
+
+    if last_value is not None and max_delta is not None:
+        if abs(new_value - last_value) > max_delta:
+            return False
+
+    return True
+
 def log_temps():
+    last_air, last_pool = get_last_valid_temps()
+
     outdoor_temp = temperature.read_temperature("outdoor")
     pool_temp = temperature.read_temperature("pool")
-    collection.insert_one({"date": datetime.datetime.now(), "air_temp": outdoor_temp, "water_temp": pool_temp})
-    logger.info("Logged temperatures: %s°F (Outdoor), %s°F (Pool) to mongo DB", outdoor_temp, pool_temp)
+
+    # Example: air can swing faster than water
+    air_ok = is_valid_temp(
+        outdoor_temp,
+        last_air,
+        min_temp=20,
+        max_temp=120,
+        max_delta=15,   # max 15°F change per logging interval
+    )
+
+    pool_ok = is_valid_temp(
+        pool_temp,
+        last_pool,
+        min_temp=30,
+        max_temp=100,
+        max_delta=5,    # pool water is slow to change; 5°F jump is suspect
+    )
+
+    if not air_ok:
+        logger.warning(
+            "Anomalous outdoor temp %.2f°F (last=%.2f°F); skipping log",
+            outdoor_temp, (last_air if last_air is not None else float("nan"))
+        )
+        outdoor_temp = None  # or use last_air if you prefer to "hold" the value
+
+    if not pool_ok:
+        logger.warning(
+            "Anomalous pool temp %.2f°F (last=%.2f°F); skipping log",
+            pool_temp, (last_pool if last_pool is not None else float("nan"))
+        )
+        pool_temp = None  # or use last_pool
+
+    # If both are bad, skip this tick entirely
+    if outdoor_temp is None and pool_temp is None:
+        logger.error("No valid temperatures to log; skipping Mongo insert")
+        return
+
+    # If one is bad but the other is fine, you can:
+    # - skip logging both, or
+    # - log the good one and reuse last good for the bad one.
+    # Example here: reuse last good value if needed:
+    if outdoor_temp is None:
+        outdoor_temp = last_air
+    if pool_temp is None:
+        pool_temp = last_pool
+
+    collection.insert_one({
+        "date": datetime.datetime.now(),
+        "air_temp": outdoor_temp,
+        "water_temp": pool_temp,
+    })
+
+    logger.info(
+        "Logged temperatures: %s°F (Outdoor), %s°F (Pool) to Mongo DB",
+        outdoor_temp, pool_temp
+    )
 
 def run_scheduler():
     while True:

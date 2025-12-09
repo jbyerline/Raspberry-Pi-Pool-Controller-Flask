@@ -39,10 +39,10 @@ class TemperatureController:
             self.use_mock = True
             self.board = pyfirmata2.Arduino("mock")
 
-    def read_temperature(self, sensor="outdoor", retries=3, delay=0.5):
+    def read_temperature(self, sensor="outdoor", retries=3, delay=0.5, samples=5):
         """
         Reads the current temperature value from the specified sensor.
-        Retries if necessary to ensure a valid reading.
+        Takes multiple samples and returns the median to reduce noise.
         """
         if self.use_mock:
             return 75.0 if sensor == "outdoor" else 78.0  # Mock values
@@ -52,30 +52,50 @@ class TemperatureController:
             return None
 
         for attempt in range(retries):
-            raw_value = self.analog_pins[sensor].read()
-            if raw_value is not None:
-                temp = self._convert_voltage_to_temperature(raw_value)
-                logger.info("Temperature reading from %s: %.2f°F", sensor, temp)
-                return temp
+            readings = []
 
-            logger.warning("No data from sensor: %s (attempt %d/%d)", sensor, attempt + 1, retries)
+            for _ in range(samples):
+                raw_value = self.analog_pins[sensor].read()
+                if raw_value is not None:
+                    temp = self._convert_voltage_to_temperature(raw_value)
+                    if temp is not None:
+                        readings.append(temp)
+                time.sleep(0.1)  # tiny pause between samples
+
+            if readings:
+                readings.sort()
+                median_temp = readings[len(readings) // 2]
+                logger.info(
+                    "Temperature reading from %s (median of %d samples): %.2f°F",
+                    sensor, len(readings), median_temp
+                )
+                return median_temp
+
+            logger.warning(
+                "No valid data from sensor: %s (attempt %d/%d)",
+                sensor, attempt + 1, retries
+            )
             time.sleep(delay)
 
-        logger.error("Failed to get a valid reading from sensor: %s after %d attempts", sensor, retries)
+        logger.error(
+            "Failed to get a valid reading from sensor: %s after %d attempts",
+            sensor, retries
+        )
         return None
 
     def _convert_voltage_to_temperature(self, volt):
-        """
-        Converts the voltage reading from the thermistor to temperature in Fahrenheit
-        using the Steinhart-Hart equation.
-        """
         try:
             thermistor_adc_val = volt * 1023
             output_voltage = (thermistor_adc_val * self.pin_voltage) / 1023.0
+
+            # Guard against division by zero / extremely small voltages
+            if output_voltage <= 0 or output_voltage >= self.pin_voltage:
+                logger.warning("Output voltage out of range: %s", output_voltage)
+                return None
+
             thermistor_resistance = ((5 * (10.0 / output_voltage)) - 10) * 1000
             therm_res_ln = math.log(thermistor_resistance)
 
-            # **Steinhart-Hart Thermistor Equation:**
             A = 0.001129148
             B = 0.000234125
             C = 8.76741e-8
@@ -84,7 +104,14 @@ class TemperatureController:
             temperature_celsius = temperature_kelvin - 273.15
             temperature_fahrenheit = (temperature_celsius * 1.8) + 32
 
-            return round(temperature_fahrenheit, 2)
+            temp_f = round(temperature_fahrenheit, 2)
+
+            # Hard physical sanity check (adjust as needed)
+            if temp_f < 20 or temp_f > 120:
+                logger.warning("Discarding unrealistic temperature: %.2f°F", temp_f)
+                return None
+
+            return temp_f
 
         except Exception as e:
             logger.error("Error converting temperature: %s", str(e))
